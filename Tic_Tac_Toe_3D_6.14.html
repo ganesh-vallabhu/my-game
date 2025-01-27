@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f3f3f3;
+            perspective: 1000px; /* Adding 3D perspective */
+        }
+
+        #matchTitle {
+            font-size: 36px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #playNowButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            position: absolute;
+        }
+
+        #loadingContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #loadingBarContainer {
+            width: 300px; /* Adjusted width for the loading bar */
+            height: 20px; /* Decreased height for the loading bar */
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        #loadingBar {
+            width: 0;
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 1s linear;
+        }
+
+        #loadingText {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+
+        #modeSelection {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .modeButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        #board {
+            display: none;
+            grid-template-columns: repeat(3, 120px);
+            grid-gap: 10px;
+            margin-top: 20px;
+            background: linear-gradient(45deg, #37474F, #78909C);
+            padding: 20px;
+            border-radius: 10px;
+            transform: rotateX(20deg); /* 3D transform */
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.2); /* Adding shadow */
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out; /* Smooth transformation for blasting */
+        }
+
+        .slot {
+            width: 120px;
+            height: 120px;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2); /* Adding inner shadow */
+            transition: transform 0.3s; /* Smooth transformation */
+        }
+
+        .slot:hover {
+            transform: scale(1.1); /* Scale on hover for 3D effect */
+        }
+
+        .playerX {
+            color: red;
+        }
+
+        .playerO {
+            color: skyblue;
+        }
+
+        .winner {
+            background-color: yellow;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .winMessage {
+            font-size: 48px;
+            margin-top: 20px;
+            opacity: 0;
+            transition: opacity 1s ease-in;
+        }
+
+        #playAgain {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            display: none;
+        }
+
+        #author {
+            margin-top: auto;
+            font-size: 14px;
+            color: #555;
+        }
+
+        #playerNames {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #playerInput1,
+        #playerInput2 {
+            margin-bottom: 10px;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        #startGameButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        /* Responsive styles for mobile */
+        @media only screen and (max-width: 600px) {
+            #board {
+                grid-template-columns: repeat(3, 80px);
+            }
+
+            .slot {
+                width: 80px;
+                height: 80px;
+                font-size: 24px;
+            }
+
+            .winMessage {
+                font-size: 36px;
+            }
+
+            #playAgain {
+                font-size: 16px;
+            }
+
+            #author {
+                font-size: 12px;
+            }
+
+            #matchTitle,
+            #playNowButton,
+            #playerNames {
+                margin-top: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="matchTitle">Tic Tac Toe</div>
+    <div id="loadingContainer">
+        <div id="loadingBarContainer">
+            <div id="loadingBar"></div>
+        </div>
+        <div id="loadingText">Loading... 0%</div>
+    </div>
+    <div id="modeSelection">
+        <button class="modeButton" onclick="selectMode('PvP')">Player vs Player</button>
+        <button class="modeButton" onclick="selectMode('PvC')">Player vs Computer</button>
+    </div>
+    <div id="playerNames">
+        <input type="text" id="playerInput1" placeholder="Enter Player 1's name">
+        <input type="text" id="playerInput2" placeholder="Enter Player 2's name" style="display: none;">
+        <button id="startGameButton" onclick="startGame()">Start Game</button>
+    </div>
+    <button id="playNowButton" onclick="startLoading()">Play Now</button>
+    <div id="board"></div>
+    <div id="status"></div>
+    <div id="winMessage" class="winMessage"></div>
+    <button id="playAgain" onclick="playAgain()">Play Again</button>
+    <div id="author">@Game Designed by Ganesh</div>
+
+    <script>
+        if (document.location.href.includes('secondPage')) {
+            document.getElementById('matchTitle').style.display = 'block';
+        }
+
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let statusElement = document.getElementById('status');
+        let winMessageElement = document.getElementById('winMessage');
+        let playAgainButton = document.getElementById('playAgain');
+        let startButton = document.getElementById('playNowButton');
+        let startGameButton = document.getElementById('startGameButton');
+        let playerNamesElement = document.getElementById('playerNames');
+        let boardElement = document.getElementById('board');
+        let loadingContainer = document.getElementById('loadingContainer');
+        let loadingBarContainer = document.getElementById('loadingBarContainer');
+        let loadingBar = document.getElementById('loadingBar');
+        let loadingText = document.getElementById('loadingText');
+        let modeSelection = document.getElementById('modeSelection');
+        let player1Name = '';
+        let player2Name = '';
+        let gameMode = 'PvP';
+
+        function initializeBoard() {
+            for (let i = 0; i < 9; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slot.dataset.index = i;
+                slot.onclick = () => handleSlotClick(i);
+                boardElement.appendChild(slot);
+            }
+        }
+
+        function showModeSelection() {
+            startButton.style.display = 'none';
+            modeSelection.style.display = 'flex';
+        }
+
+        function startLoading() {
+            startButton.style.display = 'none';
+            loadingContainer.style.display = 'flex';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 1;
+                loadingBar.style.width = progress + '%';
+                loadingText.textContent = `Loading... ${progress}%`;
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    loadingContainer.style.display = 'none';
+                    showModeSelection();
+                }
+            }, 50);
+        }
+
+        function selectMode(mode) {
+            gameMode = mode;
+            modeSelection.style.display = 'none';
+            playerNamesElement.style.display = 'flex';
+            if (gameMode === 'PvP') {
+                document.getElementById('playerInput2').style.display = 'block';
+            } else {
+                document.getElementById('playerInput2').style.display = 'none';
+            }
+        }
+
+        function startGame() {
+            player1Name = document.getElementById('playerInput1').value;
+            player2Name = gameMode === 'PvP' ? document.getElementById('playerInput2').value : 'Computer';
+
+            if (player1Name && (gameMode === 'PvP' ? player2Name : true)) {
+                playerNamesElement.style.display = 'none';
+                startGameButton.style.display = 'none';
+                boardElement.style.display = 'grid';
+                initializeBoard();
+                statusElement.textContent = `${player1Name}'s turn`;
+            } else {
+                alert('Please enter names for both players.');
+            }
+        }
+
+        function handleSlotClick(index) {
+            if (board[index] === '' && !checkWin()) {
+                board[index] = currentPlayer;
+                updateBoard();
+                if (checkWin()) {
+                    let winningLine = getWinningLine();
+                    animateWinningLine(winningLine);
+                } else if (board.every(cell => cell !== '')) {
+                    hideBoard();
+                    winMessageElement.textContent = 'Draw';
+                    winMessageElement.style.opacity = '1';
+                    playAgainButton.style.display = 'block';
+                } else {
+                    if (gameMode === 'PvC' && currentPlayer === 'X') {
+                        currentPlayer = 'O';
+                        statusElement.textContent = 'Computer\'s turn';
+                        setTimeout(computerMove, 500);
+                    } else {
+                        currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
+                        statusElement.textContent = `${currentPlayer === 'X' ? player1Name : player2Name}'s turn`;
+                    }
+                }
+            }
+        }
+
+        function updateBoard() {
+            const slots = document.getElementsByClassName('slot');
+            for (let i = 0; i < slots.length; i++) {
+                slots[i].textContent = board[i];
+                slots[i].classList.remove('playerX', 'playerO');
+                if (board[i] === 'X') {
+                    slots[i].classList.add('playerX');
+                } else if (board[i] === 'O') {
+                    slots[i].classList.add('playerO');
+                }
+            }
+        }
+
+        function checkWin() {
+            const lines = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (const line of lines) {
+                const [a, b, c] = line;
+                if (board[a] !== '' && board[a] === board[b] && board[a] === board[c]) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function getWinningLine() {
+            const lines = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (const line of lines) {
+                const [a, b, c] = line;
+                if (board[a] !== '' && board[a] === board[b] && board[a] === board[c]) {
+                    return line;
+                }
+            }
+
+            return null;
+        }
+
+        function animateWinningLine(winningLine) {
+            let slots = document.getElementsByClassName('slot');
+            let delay = 0;
+
+            winningLine.forEach(index => {
+                setTimeout(() => {
+                    slots[index].classList.add('winner');
+                }, delay);
+                delay += 300;
+            });
+
+            setTimeout(() => {
+                blastBoard();
+            }, delay);
+        }
+
+        function blastBoard() {
+            boardElement.style.opacity = '0';
+            boardElement.style.transform = 'scale(0.1)';
+            setTimeout(() => {
+                hideBoard();
+                winMessageElement.style.opacity = '1';
+                winMessageElement.textContent = `${currentPlayer === 'X' ? player1Name : player2Name} wins!`;
+                playAgainButton.style.display = 'block';
+            }, 500);
+        }
+
+        function hideBoard() {
+            boardElement.style.display = 'none';
+            statusElement.textContent = '';
+        }
+
+        function resetGame() {
+            boardElement.innerHTML = '';
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            winMessageElement.textContent = '';
+            winMessageElement.style.opacity = '0';
+            playAgainButton.style.display = 'none';
+            boardElement.style.opacity = '1';
+            boardElement.style.transform = 'rotateX(20deg)';
+            setTimeout(() => {
+                boardElement.style.display = 'grid';
+                initializeBoard();
+                statusElement.textContent = `${player1Name}'s turn`;
+            }, 500);
+        }
+
+        function playAgain() {
+            hideBoard();
+            resetGame();
+        }
+
+        function computerMove() {
+            let emptyIndices = board.map((val, index) => val === '' ? index : null).filter(val => val !== null);
+
+            // Check if the computer can win
+            let move = findWinningMove('O');
+            if (move !== -1) {
+                handleSlotClick(move);
+                return;
+            }
+
+            // Check if the computer needs to block the player
+            move = findWinningMove('X');
+            if (move !== -1) {
+                handleSlotClick(move);
+                return;
+            }
+
+            // If neither, make a random move
+            move = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+            handleSlotClick(move);
+        }
+
+        function findWinningMove(player) {
+            const lines = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (const line of lines) {
+                const [a, b, c] = line;
+                if (board[a] === player && board[b] === player && board[c] === '') {
+                    return c;
+                } else if (board[a] === player && board[b] === '' && board[c] === player) {
+                    return b;
+                } else if (board[a] === '' && board[b] === player && board[c] === player) {
+                    return a;
+                }
+            }
+
+            return -1;
+        }
+    </script>
+</body>
+</html>
